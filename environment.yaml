@@ -1,0 +1,54 @@
+name: py37
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bzip2=1.0.8=hfdf4475_7
+  - c-ares=1.34.5=hf13058a_0
+  - ca-certificates=2025.8.3=hbd8a1cb_0
+  - certifi=2024.8.30=pyhd8ed1ab_0
+  - cftime=1.6.0=py37h4105427_0
+  - curl=8.8.0=hea67d85_1
+  - hdf4=4.2.15=hefd3b78_3
+  - hdf5=1.10.6=nompi_haae91d6_101
+  - jpeg=9e=hb7f2c08_3
+  - krb5=1.21.3=h37d8d59_0
+  - libblas=3.9.0=8_openblas
+  - libcblas=3.9.0=8_openblas
+  - libcurl=8.8.0=hf9fcc65_1
+  - libcxx=20.1.8=h3d58e20_1
+  - libedit=3.1.20250104=pl5321ha958ccf_0
+  - libev=4.33=h10d778d_2
+  - libffi=3.4.4=hecd8cb5_1
+  - libgfortran=4.0.0=7_5_0_h1a10cd1_23
+  - libgfortran4=7.5.0=h1a10cd1_23
+  - liblapack=3.9.0=8_openblas
+  - libnetcdf=4.7.4=nompi_h9d8a93f_107
+  - libnghttp2=1.58.0=h64cf6d3_1
+  - libopenblas=0.3.12=openmp_h63d9170_1
+  - libssh2=1.11.0=hd019ec5_0
+  - libzlib=1.2.13=h87427d6_6
+  - llvm-openmp=20.1.8=hf4e0ed4_1
+  - mpi=1.0=mpich
+  - mpi4py=3.0.0=py37h77202c6_1005
+  - mpich=3.2.1=hfcebdee_1014
+  - ncurses=6.5=h923df54_0
+  - netcdf4=1.5.3=nompi_py37hf55ae24_105
+  - numpy=1.18.5=py37h7687784_0
+  - openssl=3.5.1=hc426f3f_0
+  - pip=22.3.1=py37hecd8cb5_0
+  - python=3.7.12=hf3644f1_100_cpython
+  - python-dateutil=2.8.1=py_0
+  - python_abi=3.7=2_cp37m
+  - pyyaml=6.0=py37h6c40b1e_1
+  - readline=8.2=hca72f7f_0
+  - setuptools=65.6.3=py37hecd8cb5_0
+  - six=1.16.0=pyh6c4a22f_0
+  - sqlite=3.50.2=hc8b0dd6_1
+  - tk=8.6.14=h0a12a5f_1
+  - wheel=0.38.4=py37hecd8cb5_0
+  - xz=5.6.4=h46256e1_1
+  - yaml=0.2.5=h4132b18_3
+  - zlib=1.2.13=h87427d6_6
+  - zstd=1.5.6=h915ae27_0
+prefix: /Users/zijianliu/miniconda3/envs/py37

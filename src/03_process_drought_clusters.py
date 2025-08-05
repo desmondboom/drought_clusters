@@ -20,7 +20,7 @@ import drought_clusters_utils as dclib
 ##################################################################################
 
 # Load config
-with open("definitions.yaml") as f:
+with open("src/definitions.yaml") as f:
     definitions = yaml.load(f, Loader=yaml.FullLoader)
 
 dataset = definitions["dataset"]
@@ -34,7 +34,7 @@ lat_var = definitions["lat_var"]
 lon_var = definitions["lon_var"]
 
 clusters_partial_path = definitions["clusters_partial_path"]
-clusters_full_path = f"{clusters_partial_path}/{dataset}/{region}/{drought_metric}/{drought_threshold_name}/"
+clusters_full_path = f"{clusters_partial_path}/{dataset}/{region}/{drought_metric}/{drought_threshold_name}"
 
 # File to get coordinates
 f = Dataset(

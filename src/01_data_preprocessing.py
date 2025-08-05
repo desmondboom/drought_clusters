@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Modified script to calculate temperature-based dynamic threshold and heatwave binary mask.
-Inputs: ERA5 temperature NetCDF file (1981–2020)
-Outputs: T_actual, T_threshold (90th percentile), heatwave_mask
-"""
+import os
+from datetime import datetime
 
 import numpy as np
-from netCDF4 import Dataset, num2date, date2num
-from datetime import datetime
-import os
+from netCDF4 import Dataset, date2num, num2date
 
 # ----------------------------------------
 # 用户需定义的路径和变量
@@ -17,12 +12,13 @@ dataset = "ERA5"
 start_date = datetime(2011, 5, 1)
 end_date = datetime(2020, 9, 30)
 
-temp_path = "era5_temp_2011_2020.nc"  # 你的实际文件路径
-clim_path = "era5_temp_1981_2020.nc"  # 气候基准期，用于计算阈值
-output_path = "heatwave_processed.nc"
+temp_path = "./data/era5_daily_mean_198005-202009_CHINA.nc"  # 你的实际文件路径
+clim_path = "./data/era5_daily_mean_201105-202009_CHINA.nc"  # 气候基准期，用于计算阈值
+output_path = "./data/processed/heatwave_processed.nc"
 
 var_name = "t2m"  # NetCDF 中的温度变量名（单位为 Kelvin）
 percentile_level = 90
+
 
 # ----------------------------------------
 # 加载原始温度数据（ERA5）
@@ -32,13 +28,14 @@ def load_temperature(path):
     temp = f.variables[var_name][:]  # shape: (time, lat, lon)
     temp = temp - 273.15  # 转为摄氏度
     time = f.variables["time"]
-    lons = f.variables["longitude"][:]
-    lats = f.variables["latitude"][:]
+    lons = f.variables["lon"][:]
+    lats = f.variables["lat"][:]
     time_units = time.units
     time_calendar = time.calendar if hasattr(time, "calendar") else "standard"
     dates = num2date(time[:], units=time_units, calendar=time_calendar)
     f.close()
     return temp, dates, lats, lons
+
 
 T_actual, dates_actual, lats, lons = load_temperature(temp_path)
 T_clim, dates_clim, _, _ = load_temperature(clim_path)
@@ -50,7 +47,8 @@ T_threshold = np.full_like(T_actual, np.nan)
 
 for day_index, target_date in enumerate(dates_actual):
     clim_days = [
-        i for i, d in enumerate(dates_clim)
+        i
+        for i, d in enumerate(dates_clim)
         if d.month == target_date.month and d.day == target_date.day
     ]
     if not clim_days:
@@ -82,9 +80,15 @@ output_nc.createVariable("lat", "f4", ("lat",))[:] = lats
 output_nc.createVariable("lon", "f4", ("lon",))[:] = lons
 
 # 写入变量
-output_nc.createVariable("T_actual", "f4", ("time", "lat", "lon"), zlib=True)[:] = T_actual
-output_nc.createVariable("T_threshold", "f4", ("time", "lat", "lon"), zlib=True)[:] = T_threshold
-output_nc.createVariable("heatwave_mask", "i1", ("time", "lat", "lon"), zlib=True)[:] = heatwave_mask
+output_nc.createVariable("T_actual", "f4", ("time", "lat", "lon"), zlib=True)[:] = (
+    T_actual
+)
+output_nc.createVariable("T_threshold", "f4", ("time", "lat", "lon"), zlib=True)[:] = (
+    T_threshold
+)
+output_nc.createVariable("heatwave_mask", "i1", ("time", "lat", "lon"), zlib=True)[
+    :
+] = heatwave_mask
 
 output_nc.description = "Processed ERA5 heatwave data with dynamic threshold and mask"
 output_nc.close()

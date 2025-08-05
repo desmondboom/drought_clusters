@@ -4,7 +4,7 @@ region: China
 
 # 名称用于组织文件夹结构，热浪不再是干旱百分位
 drought_metric: heatwave
-drought_threshold: 90  # 代表 90百分位，但其实不再在代码中使用
+drought_threshold: 90p  # 代表 90百分位
 
 # 输入 NetCDF 文件路径和文件名
 drought_metric_path: ./data/processed/  # 示例路径，请根据你实际设置

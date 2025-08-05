@@ -23,7 +23,7 @@ size = comm.Get_size()
 ############################ LOAD CONFIGURATION ##################################
 ##################################################################################
 
-with open("definitions.yaml") as f:
+with open("src/definitions.yaml") as f:
     definitions = yaml.load(f, Loader=yaml.FullLoader)
 
 dataset = definitions["dataset"]
@@ -64,12 +64,20 @@ resolution_lat = np.mean(lats[1:] - lats[:-1])
 ##################################################################################
 
 
+import os  # 确保放在文件顶部
+
+
 def find_clusters(chunk):
     chunk_length = len(chunk)
 
+    # 🛠️ 确保输出路径存在（只执行一次）
+    if not os.path.exists(clusters_full_path):
+        os.makedirs(clusters_full_path)
+
     for i in range(0, chunk_length):
         index = int(chunk[i])
-        current_date = start_date + relativedelta(days=int(index))  # daily time
+        current_date = start_date + relativedelta(days=index)  # daily time
+        safe_date_str = current_date.strftime("%Y%m%d")  # 🆗 无空格的日期字符串
 
         # STEP 1: Extract 2D fields for this timestep
         binary_mask = heatwave_mask[index, :, :]
@@ -93,16 +101,17 @@ def find_clusters(chunk):
             cluster_dict, temp_diff, lons, lats, resolution_lon, resolution_lat
         )
 
-        # STEP 5: Save results
-        f_name_mask = f"{clusters_full_path}/heatwave-mask_{str(current_date)}.pck"
-        f_name_dict = (
-            f"{clusters_full_path}/heatwave-dictionary_{str(current_date)}.pck"
-        )
-        f_name_count = f"{clusters_full_path}/heatwave-count_{str(current_date)}.pck"
+        # STEP 5: Save results with safe file names
+        f_name_mask = f"{clusters_full_path}/heatwave-mask_{safe_date_str}.pck"
+        f_name_dict = f"{clusters_full_path}/heatwave-dictionary_{safe_date_str}.pck"
+        f_name_count = f"{clusters_full_path}/heatwave-count_{safe_date_str}.pck"
 
-        pickle.dump(binary_mask, open(f_name_mask, "wb"), pickle.HIGHEST_PROTOCOL)
-        pickle.dump(cluster_dict, open(f_name_dict, "wb"), pickle.HIGHEST_PROTOCOL)
-        pickle.dump(cluster_count, open(f_name_count, "wb"), pickle.HIGHEST_PROTOCOL)
+        with open(f_name_mask, "wb") as f:
+            pickle.dump(binary_mask, f, pickle.HIGHEST_PROTOCOL)
+        with open(f_name_dict, "wb") as f:
+            pickle.dump(cluster_dict, f, pickle.HIGHEST_PROTOCOL)
+        with open(f_name_count, "wb") as f:
+            pickle.dump(cluster_count, f, pickle.HIGHEST_PROTOCOL)
 
         print(f"Rank {rank + 1}: Saved results for time step {index + 1}.")
 
