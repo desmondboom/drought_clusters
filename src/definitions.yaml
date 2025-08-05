@@ -1,40 +1,29 @@
---- 
-# This file contains all the definitions needed to identify and track drought clusters
+# dataset info
+dataset: ERA5
+region: China
 
-# Name of the dataset used to calculate gridded drought metric (must not contain spaces) -- will be used to organize paths
-dataset: MERRA2
+# 名称用于组织文件夹结构，热浪不再是干旱百分位
+drought_metric: heatwave
+drought_threshold: 90p  # 代表 90百分位
 
-# Region where this analysis is carried out (must not contain spaces) -- will be used to organize paths
-region: Global
+# 输入 NetCDF 文件路径和文件名
+drought_metric_path: ./data/processed/  # 示例路径，请根据你实际设置
+drought_metric_file_name: heatwave_processed.nc
 
-# Name of the drought metric (must not contain spaces) -- will be used to organize paths
-drought_metric: precipitation_percentiles
-
-# Path and file name of the NetCDF file with the drought metric (include '.nc')
-drought_metric_path: ''
-drought_metric_file_name: ''
-
-# Names of the variables in the NetCDF file with the drought metric
+# NetCDF 中变量名（保持不变或与前处理一致）
 lat_var: lat
 lon_var: lon
-metric_var: percentiles
+metric_var: heatwave_mask  # 虽然没用到，但保留以兼容原结构
 
-# Start and end years for the drought metric
-start_year: 1980
-end_year: 2018
+# 时间设置
+start_year: 2011
+end_year: 2020
 
-# Threshold for drought definition (if using percentiles, 0.2 corresponds to 20th percentile)
-drought_threshold: 0.2
-
-# Threshold for minimum cluster area (km^2)
+# 聚类最小面积（km²）
 minimum_area_threshold: 10000
 
-# Set boolean variable of whether to treat the right/left edges of the map as periodic
-periodic_bool: True
+# 是否经度为周期边界（仅在全球数据中设为 True，区域数据建议设为 False）
+periodic_bool: False
 
-# Path to the directory where the drought clusters will be saved
-# The full path where the clusters will be saved is recommended to take the following order:
-#       clusters_full_path = clusters_partial_path/dataset/region/drought_metric/drought_threshold/
-# This will allow for easy organization if clusters are calculated for multiple datasets,
-# regions, variables, and drought thresholds.
-clusters_partial_path: ''
+# 输出目录基础路径（你可以定义一个例如 ./clusters_output/）
+clusters_partial_path: ./clusters_output

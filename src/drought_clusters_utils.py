@@ -5,13 +5,14 @@ Written by Julio E. Herrera Estrada, Ph.D.
 """
 
 # Import libraries
-import numpy as np
-import cPickle as pickle
-from netCDF4 import Dataset
+import os
+import pickle
 from calendar import monthrange
 from datetime import timedelta
-from dateutil.relativedelta import relativedelta
 
+import numpy as np
+from dateutil.relativedelta import relativedelta
+from netCDF4 import Dataset
 
 #############################################################################################################
 ######################################### DATA PRE-PROCESSING TOOLS #########################################
@@ -549,7 +550,7 @@ def find_drought_clusters(
     idx_lat, idx_lon = np.where(np.isfinite(data_matrix))
 
     # Link them so they become coordinates
-    linked_indices = zip(idx_lat, idx_lon)
+    linked_indices = list(zip(idx_lat, idx_lon))
 
     # Number of pixels under drought
     npixels = len(idx_lat)
@@ -759,21 +760,21 @@ def filter_drought_clusters(
                 "intensity": [],
                 "centroid": [],
             }
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "coordinates"
-            ] = cluster_dictionary[i]["coordinates"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "area"
-            ] = cluster_dictionary[i]["area"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "intensity"
-            ] = cluster_dictionary[i]["intensity"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "variability"
-            ] = cluster_dictionary[i]["variability"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "centroid"
-            ] = cluster_dictionary[i]["centroid"]
+            filtered_cluster_dictionary[filtered_cluster_count]["coordinates"] = (
+                cluster_dictionary[i]["coordinates"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["area"] = (
+                cluster_dictionary[i]["area"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["intensity"] = (
+                cluster_dictionary[i]["intensity"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["variability"] = (
+                cluster_dictionary[i]["variability"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["centroid"] = (
+                cluster_dictionary[i]["centroid"]
+            )
 
         else:
 
@@ -928,7 +929,7 @@ def find_geo_distance(lon1, lat1, lon2, lat2):
     """
 
     # Import libraries
-    from math import sin, cos, sqrt, atan2, radians
+    from math import atan2, cos, radians, sin, sqrt
 
     # Earth's radius
     R = 6371.0
@@ -1008,15 +1009,15 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
         cluster_data_dictionary[cluster_ID_count][t_idx]["area"] = first_dictionary[i][
             "area"
         ]
-        cluster_data_dictionary[cluster_ID_count][t_idx][
-            "intensity"
-        ] = first_dictionary[i]["intensity"]
+        cluster_data_dictionary[cluster_ID_count][t_idx]["intensity"] = (
+            first_dictionary[i]["intensity"]
+        )
         cluster_data_dictionary[cluster_ID_count][t_idx]["centroid"] = first_dictionary[
             i
         ]["centroid"]
-        cluster_data_dictionary[cluster_ID_count][t_idx][
-            "coordinates"
-        ] = first_dictionary[i]["coordinates"]
+        cluster_data_dictionary[cluster_ID_count][t_idx]["coordinates"] = (
+            first_dictionary[i]["coordinates"]
+        )
 
         # Also save the clusters present in the first time step
         cluster_data_dictionary[t_idx].append(cluster_ID_count)
@@ -1130,18 +1131,18 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
                 cluster_data_dictionary[cluster_ID_count]["merging_events"] = []
                 cluster_data_dictionary[cluster_ID_count]["merging_events_by_date"] = []
                 cluster_data_dictionary[cluster_ID_count][next_date] = {}
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "area"
-                ] = future_dictionary[k]["area"]
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "intensity"
-                ] = future_dictionary[k]["intensity"]
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "centroid"
-                ] = future_dictionary[k]["centroid"]
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "coordinates"
-                ] = future_dictionary[k]["coordinates"]
+                cluster_data_dictionary[cluster_ID_count][next_date]["area"] = (
+                    future_dictionary[k]["area"]
+                )
+                cluster_data_dictionary[cluster_ID_count][next_date]["intensity"] = (
+                    future_dictionary[k]["intensity"]
+                )
+                cluster_data_dictionary[cluster_ID_count][next_date]["centroid"] = (
+                    future_dictionary[k]["centroid"]
+                )
+                cluster_data_dictionary[cluster_ID_count][next_date]["coordinates"] = (
+                    future_dictionary[k]["coordinates"]
+                )
 
                 # Add this cluster to the list of clusters in the next time step
                 cluster_data_dictionary[next_date].append(cluster_ID_count)
@@ -1194,15 +1195,15 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
                         "merging_events_by_date"
                     ] = []
                     cluster_data_dictionary[cluster_ID_count][next_date] = {}
-                    cluster_data_dictionary[cluster_ID_count][next_date][
-                        "area"
-                    ] = future_dictionary[k]["area"]
+                    cluster_data_dictionary[cluster_ID_count][next_date]["area"] = (
+                        future_dictionary[k]["area"]
+                    )
                     cluster_data_dictionary[cluster_ID_count][next_date][
                         "intensity"
                     ] = future_dictionary[k]["intensity"]
-                    cluster_data_dictionary[cluster_ID_count][next_date][
-                        "centroid"
-                    ] = future_dictionary[k]["centroid"]
+                    cluster_data_dictionary[cluster_ID_count][next_date]["centroid"] = (
+                        future_dictionary[k]["centroid"]
+                    )
                     cluster_data_dictionary[cluster_ID_count][next_date][
                         "coordinates"
                     ] = future_dictionary[k]["coordinates"]
@@ -1225,15 +1226,15 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
 
                     # Create entry for the biggest linked cluster that hasn't been assigned already
                     cluster_data_dictionary[largest_cluster][next_date] = {}
-                    cluster_data_dictionary[largest_cluster][next_date][
-                        "area"
-                    ] = future_dictionary[k]["area"]
-                    cluster_data_dictionary[largest_cluster][next_date][
-                        "intensity"
-                    ] = future_dictionary[k]["intensity"]
-                    cluster_data_dictionary[largest_cluster][next_date][
-                        "centroid"
-                    ] = future_dictionary[k]["centroid"]
+                    cluster_data_dictionary[largest_cluster][next_date]["area"] = (
+                        future_dictionary[k]["area"]
+                    )
+                    cluster_data_dictionary[largest_cluster][next_date]["intensity"] = (
+                        future_dictionary[k]["intensity"]
+                    )
+                    cluster_data_dictionary[largest_cluster][next_date]["centroid"] = (
+                        future_dictionary[k]["centroid"]
+                    )
                     cluster_data_dictionary[largest_cluster][next_date][
                         "coordinates"
                     ] = future_dictionary[k]["coordinates"]
@@ -1601,3 +1602,150 @@ def Create_NETCDF_File(dims, file, var, var_info, data, tinitial):
     f.variables[var][:] = data
 
     return f
+
+
+def add_heatwave_metrics(cluster_dict, T_diff, lons, lats, res_lon, res_lat):
+    """
+    添加强度 intensity 和质心 centroid 到每个热浪聚类字典中
+    """
+    area_per_grid = res_lon * res_lat * 111**2  # 近似 km^2
+
+    for cid, info in cluster_dict.items():
+        coords = info["coordinates"]  # 格点索引列表
+        weights = []
+        lon_weighted, lat_weighted = 0.0, 0.0
+        total_weight = 0.0
+        intensity = 0.0
+
+        for y, x in coords:
+            diff = T_diff[y, x]
+            if diff <= 0:
+                continue
+            weight = diff
+            lat_val = lats[y]
+            lon_val = lons[x]
+
+            lon_weighted += lon_val * weight
+            lat_weighted += lat_val * weight
+            intensity += weight * area_per_grid
+            total_weight += weight
+
+        # 添加指标
+        if total_weight > 0:
+            cluster_dict[cid]["intensity"] = float(intensity)
+            cluster_dict[cid]["centroid"] = (
+                float(lon_weighted / total_weight),
+                float(lat_weighted / total_weight),
+            )
+        else:
+            cluster_dict[cid]["intensity"] = 0.0
+            cluster_dict[cid]["centroid"] = (None, None)
+
+    return cluster_dict
+
+
+def clusters_are_connected(info1, info2, distance_threshold=1):
+    """
+    判断两个聚类是否相连：是否共享或相邻格点（基于 index)
+    """
+    coords1 = set(info1.get("coordinates", []))
+    coords2 = set(info2.get("coordinates", []))
+
+    # 简化版：只要有重叠或相邻格点就认为连接
+    for y1, x1 in coords1:
+        for y2, x2 in coords2:
+            if (
+                abs(y1 - y2) <= distance_threshold
+                and abs(x1 - x2) <= distance_threshold
+            ):
+                return True
+    return False
+
+
+def track_heatwave_clusters_and_save(
+    cluster_path,
+    start_date,
+    end_date,
+    nt,
+    lons,
+    lats,
+    threshold_str,
+    dataset_name,
+):
+    """
+    追踪热浪聚类在时间维度上的演化，并保存为追踪事件字典
+    """
+    print("▶️ 开始追踪热浪事件...")
+
+    cluster_data_dictionary = {}
+    event_id_counter = 0
+
+    previous_clusters = {}
+    previous_date = None
+
+    date = start_date
+    for t in range(nt):
+        safe_date_str = date.strftime("%Y%m%d")
+        file_dict = f"{cluster_path}/heatwave-dictionary_{safe_date_str}.pck"
+
+        if not os.path.exists(file_dict):
+            print(f"⚠️ 跳过 {date}，无聚类文件。 {file_dict}")
+            date += timedelta(days=1)
+            continue
+
+        current_clusters = pickle.load(open(file_dict, "rb"))
+
+        # 将当前聚类分配到热浪事件中
+        for cid, info in current_clusters.items():
+            matched_event = None
+
+            # 尝试匹配前一天的聚类
+            if previous_clusters:
+                for prev_cid, prev_info in previous_clusters.items():
+                    if clusters_are_connected(info, prev_info):
+                        matched_event = prev_info.get("__event_id__")
+                        break
+
+            if matched_event is not None:
+                # 合并到已有事件
+                cluster_data_dictionary[matched_event]["end"] = date
+                cluster_data_dictionary[matched_event]["duration"] += 1
+                cluster_data_dictionary[matched_event]["total_intensity"] += info.get(
+                    "intensity", 0
+                )
+                area = info.get("area", 0)
+                if area > cluster_data_dictionary[matched_event]["max_area"]:
+                    cluster_data_dictionary[matched_event]["max_area"] = area
+                cluster_data_dictionary[matched_event]["centroid_trajectory"][date] = (
+                    info.get("centroid", (None, None))
+                )
+                cluster_data_dictionary[matched_event]["daily_coordinates"][date] = (
+                    info.get("coordinates", [])
+                )
+            else:
+                # 创建新事件
+                cluster_data_dictionary[event_id_counter] = {
+                    "start": date,
+                    "end": date,
+                    "duration": 1,
+                    "total_intensity": info.get("intensity", 0),
+                    "max_area": info.get("area", 0),
+                    "centroid_trajectory": {date: info.get("centroid", (None, None))},
+                    "daily_coordinates": {date: info.get("coordinates", [])},
+                }
+                current_clusters[cid]["__event_id__"] = event_id_counter
+                event_id_counter += 1
+
+        previous_clusters = current_clusters
+        previous_date = date
+        date += timedelta(days=1)
+
+    print(f"✅ 共识别热浪事件数：{len(cluster_data_dictionary)}")
+
+    # 保存为 .pck 文件
+    output_file = f"{cluster_path}/result/tracked_clusters_dictionary_{start_date.year}-{end_date.year}.pck"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)  # ✅ 确保目录存在
+    with open(output_file, "wb") as f:
+        pickle.dump(cluster_data_dictionary, f, pickle.HIGHEST_PROTOCOL)
+
+    print(f"✅ 热浪追踪数据保存至：{output_file}")

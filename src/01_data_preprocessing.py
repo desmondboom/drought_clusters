@@ -1,85 +1,95 @@
-"""
-This script processes reanalysis data to be used in the clustering algorithm. The output is a 3D matrix of the percentiles
-of cumulative anomalies of precipitation minus evaporation.
-
-Note that the "**" at the beginning of a comment show the lines where the user will need to make modifications, 
-either by writing the path to the file or by making sure the variable names correspond to those in the NetCDF file.
-
-Written by Julio E. Herrera Estrada, Ph.D.
-"""
-
-# Import Python libraries
-import numpy as np
-from netCDF4 import Dataset
+# -*- coding: utf-8 -*-
+import os
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 
-# Import custom libraries
-import drought_clusters_utils as dclib
+import numpy as np
+from netCDF4 import Dataset, date2num, num2date
 
-##################################################################################
-############################ SET PATHS AND DEFINITIONS ###########################
-##################################################################################
+# ----------------------------------------
+# 用户需定义的路径和变量
+# ----------------------------------------
+dataset = "ERA5"
+start_date = datetime(2011, 5, 1)
+end_date = datetime(2020, 9, 30)
 
-# ** Definitions
-dataset = "MERRA2"
-start_date = datetime(1980, 1, 1)
+temp_path = "./data/era5_daily_mean_198005-202009_CHINA.nc"  # 你的实际文件路径
+clim_path = "./data/era5_daily_mean_201105-202009_CHINA.nc"  # 气候基准期，用于计算阈值
+output_path = "./data/processed/heatwave_processed.nc"
 
-# ** Full path with file name for monthly precipitation and evaporation NetCDF files
-prcp_path = ""
-et_path = ""
+var_name = "t2m"  # NetCDF 中的温度变量名（单位为 Kelvin）
+percentile_level = 90
 
-# ** Full path with file name for the NetCDF file with the percentiels
-percentiles_path = ""
 
-# ** Open NetCDF files containing the monthly precipitation ane evaporation from MERRA-2
-f = Dataset(prcp_path)
-prcp = f.variables["prcp"][:]
-lons = f.variables["lon"][:]
-lats = f.variables["lat"][:]
-f.close()
+# ----------------------------------------
+# 加载原始温度数据（ERA5）
+# ----------------------------------------
+def load_temperature(path):
+    f = Dataset(path)
+    temp = f.variables[var_name][:]  # shape: (time, lat, lon)
+    temp = temp - 273.15  # 转为摄氏度
+    time = f.variables["time"]
+    lons = f.variables["lon"][:]
+    lats = f.variables["lat"][:]
+    time_units = time.units
+    time_calendar = time.calendar if hasattr(time, "calendar") else "standard"
+    dates = num2date(time[:], units=time_units, calendar=time_calendar)
+    f.close()
+    return temp, dates, lats, lons
 
-f = Dataset(et_path)
-et = f.variables["et"][:]
-f.close()
 
-##################################################################################
-############################# CARRY OUT CALCULATIONS #############################
-##################################################################################
+T_actual, dates_actual, lats, lons = load_temperature(temp_path)
+T_clim, dates_clim, _, _ = load_temperature(clim_path)
 
-# Calculate precipitation minus evaporation (P-E)
-pme = prcp - et
+# ----------------------------------------
+# 计算气候基准期每年同日的第 90 百分位（动态阈值）
+# ----------------------------------------
+T_threshold = np.full_like(T_actual, np.nan)
 
-# Calculate monthly anomalies of P-E
-anomalies = dclib.calculate_anomalies_matrix(pme)
+for day_index, target_date in enumerate(dates_actual):
+    clim_days = [
+        i
+        for i, d in enumerate(dates_clim)
+        if d.month == target_date.month and d.day == target_date.day
+    ]
+    if not clim_days:
+        continue
+    clim_samples = T_clim[clim_days, :, :]  # shape: (N_years, lat, lon)
+    T_threshold[day_index, :, :] = np.percentile(clim_samples, percentile_level, axis=0)
 
-# Calculate cumulative anomalies of P-E over a given accumulation period
-accumulation_window = 12  # months
-cumulative_anomalies = dclib.calculate_cumulative_anomalies_matrix(
-    anomalies, accumulation_window
+# ----------------------------------------
+# 生成二值热浪掩码矩阵（实际温度超过动态阈值）
+# ----------------------------------------
+heatwave_mask = (T_actual > T_threshold).astype(np.uint8)
+
+# ----------------------------------------
+# 保存到一个 NetCDF 文件中
+# ----------------------------------------
+output_nc = Dataset(output_path, "w", format="NETCDF4")
+output_nc.createDimension("time", len(dates_actual))
+output_nc.createDimension("lat", len(lats))
+output_nc.createDimension("lon", len(lons))
+
+# 时间变量
+time_var = output_nc.createVariable("time", "f8", ("time",))
+time_var.units = "hours since 1900-01-01 00:00:00"
+time_var.calendar = "standard"
+time_var[:] = date2num(dates_actual, units=time_var.units, calendar=time_var.calendar)
+
+# 空间变量
+output_nc.createVariable("lat", "f4", ("lat",))[:] = lats
+output_nc.createVariable("lon", "f4", ("lon",))[:] = lons
+
+# 写入变量
+output_nc.createVariable("T_actual", "f4", ("time", "lat", "lon"), zlib=True)[:] = (
+    T_actual
 )
-new_start_date = start_date + relativedelta(years=1)
-
-# Calculate percentiles of cumulative anomalies of P-E
-seasonality_bool = False
-percentiles_matrix = dclib.calculate_percentiles_matrix(
-    cumulative_anomalies, seasonality_bool
+output_nc.createVariable("T_threshold", "f4", ("time", "lat", "lon"), zlib=True)[:] = (
+    T_threshold
 )
+output_nc.createVariable("heatwave_mask", "i1", ("time", "lat", "lon"), zlib=True)[
+    :
+] = heatwave_mask
 
-# Information to save the percentiles_matrix
-units = "percentiles"
-var_name_percentiles = "percentiles"
-var_info = "Percentiles of P-E cumulative anomalies from " + dataset + "."
-
-# Save percentiles matrix
-dclib.save_netcdf_file(
-    percentiles_matrix,
-    lons,
-    lats,
-    units,
-    var_name_percentiles,
-    var_info,
-    percentiles_path,
-    new_start_date,
-)
-print("Done calculating and saving percentiles.")
+output_nc.description = "Processed ERA5 heatwave data with dynamic threshold and mask"
+output_nc.close()
+print("处理完成，数据保存为：", output_path)
