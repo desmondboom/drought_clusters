@@ -6,7 +6,7 @@ Written by Julio E. Herrera Estrada, Ph.D.
 
 # Import libraries
 import numpy as np
-import cPickle as pickle
+import pickle
 from netCDF4 import Dataset
 from calendar import monthrange
 from datetime import timedelta
@@ -759,21 +759,21 @@ def filter_drought_clusters(
                 "intensity": [],
                 "centroid": [],
             }
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "coordinates"
-            ] = cluster_dictionary[i]["coordinates"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "area"
-            ] = cluster_dictionary[i]["area"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "intensity"
-            ] = cluster_dictionary[i]["intensity"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "variability"
-            ] = cluster_dictionary[i]["variability"]
-            filtered_cluster_dictionary[filtered_cluster_count][
-                "centroid"
-            ] = cluster_dictionary[i]["centroid"]
+            filtered_cluster_dictionary[filtered_cluster_count]["coordinates"] = (
+                cluster_dictionary[i]["coordinates"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["area"] = (
+                cluster_dictionary[i]["area"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["intensity"] = (
+                cluster_dictionary[i]["intensity"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["variability"] = (
+                cluster_dictionary[i]["variability"]
+            )
+            filtered_cluster_dictionary[filtered_cluster_count]["centroid"] = (
+                cluster_dictionary[i]["centroid"]
+            )
 
         else:
 
@@ -1008,15 +1008,15 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
         cluster_data_dictionary[cluster_ID_count][t_idx]["area"] = first_dictionary[i][
             "area"
         ]
-        cluster_data_dictionary[cluster_ID_count][t_idx][
-            "intensity"
-        ] = first_dictionary[i]["intensity"]
+        cluster_data_dictionary[cluster_ID_count][t_idx]["intensity"] = (
+            first_dictionary[i]["intensity"]
+        )
         cluster_data_dictionary[cluster_ID_count][t_idx]["centroid"] = first_dictionary[
             i
         ]["centroid"]
-        cluster_data_dictionary[cluster_ID_count][t_idx][
-            "coordinates"
-        ] = first_dictionary[i]["coordinates"]
+        cluster_data_dictionary[cluster_ID_count][t_idx]["coordinates"] = (
+            first_dictionary[i]["coordinates"]
+        )
 
         # Also save the clusters present in the first time step
         cluster_data_dictionary[t_idx].append(cluster_ID_count)
@@ -1130,18 +1130,18 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
                 cluster_data_dictionary[cluster_ID_count]["merging_events"] = []
                 cluster_data_dictionary[cluster_ID_count]["merging_events_by_date"] = []
                 cluster_data_dictionary[cluster_ID_count][next_date] = {}
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "area"
-                ] = future_dictionary[k]["area"]
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "intensity"
-                ] = future_dictionary[k]["intensity"]
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "centroid"
-                ] = future_dictionary[k]["centroid"]
-                cluster_data_dictionary[cluster_ID_count][next_date][
-                    "coordinates"
-                ] = future_dictionary[k]["coordinates"]
+                cluster_data_dictionary[cluster_ID_count][next_date]["area"] = (
+                    future_dictionary[k]["area"]
+                )
+                cluster_data_dictionary[cluster_ID_count][next_date]["intensity"] = (
+                    future_dictionary[k]["intensity"]
+                )
+                cluster_data_dictionary[cluster_ID_count][next_date]["centroid"] = (
+                    future_dictionary[k]["centroid"]
+                )
+                cluster_data_dictionary[cluster_ID_count][next_date]["coordinates"] = (
+                    future_dictionary[k]["coordinates"]
+                )
 
                 # Add this cluster to the list of clusters in the next time step
                 cluster_data_dictionary[next_date].append(cluster_ID_count)
@@ -1194,15 +1194,15 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
                         "merging_events_by_date"
                     ] = []
                     cluster_data_dictionary[cluster_ID_count][next_date] = {}
-                    cluster_data_dictionary[cluster_ID_count][next_date][
-                        "area"
-                    ] = future_dictionary[k]["area"]
+                    cluster_data_dictionary[cluster_ID_count][next_date]["area"] = (
+                        future_dictionary[k]["area"]
+                    )
                     cluster_data_dictionary[cluster_ID_count][next_date][
                         "intensity"
                     ] = future_dictionary[k]["intensity"]
-                    cluster_data_dictionary[cluster_ID_count][next_date][
-                        "centroid"
-                    ] = future_dictionary[k]["centroid"]
+                    cluster_data_dictionary[cluster_ID_count][next_date]["centroid"] = (
+                        future_dictionary[k]["centroid"]
+                    )
                     cluster_data_dictionary[cluster_ID_count][next_date][
                         "coordinates"
                     ] = future_dictionary[k]["coordinates"]
@@ -1225,15 +1225,15 @@ def track_clusters(drought_cluster_dictionary, drought_matrix, start_date, end_d
 
                     # Create entry for the biggest linked cluster that hasn't been assigned already
                     cluster_data_dictionary[largest_cluster][next_date] = {}
-                    cluster_data_dictionary[largest_cluster][next_date][
-                        "area"
-                    ] = future_dictionary[k]["area"]
-                    cluster_data_dictionary[largest_cluster][next_date][
-                        "intensity"
-                    ] = future_dictionary[k]["intensity"]
-                    cluster_data_dictionary[largest_cluster][next_date][
-                        "centroid"
-                    ] = future_dictionary[k]["centroid"]
+                    cluster_data_dictionary[largest_cluster][next_date]["area"] = (
+                        future_dictionary[k]["area"]
+                    )
+                    cluster_data_dictionary[largest_cluster][next_date]["intensity"] = (
+                        future_dictionary[k]["intensity"]
+                    )
+                    cluster_data_dictionary[largest_cluster][next_date]["centroid"] = (
+                        future_dictionary[k]["centroid"]
+                    )
                     cluster_data_dictionary[largest_cluster][next_date][
                         "coordinates"
                     ] = future_dictionary[k]["coordinates"]
@@ -1601,3 +1601,43 @@ def Create_NETCDF_File(dims, file, var, var_info, data, tinitial):
     f.variables[var][:] = data
 
     return f
+
+
+def add_heatwave_metrics(cluster_dict, T_diff, lons, lats, res_lon, res_lat):
+    """
+    添加强度 intensity 和质心 centroid 到每个热浪聚类字典中
+    """
+    area_per_grid = res_lon * res_lat * 111**2  # 近似 km^2
+
+    for cid, info in cluster_dict.items():
+        coords = info["coordinates"]  # 格点索引列表
+        weights = []
+        lon_weighted, lat_weighted = 0.0, 0.0
+        total_weight = 0.0
+        intensity = 0.0
+
+        for y, x in coords:
+            diff = T_diff[y, x]
+            if diff <= 0:
+                continue
+            weight = diff
+            lat_val = lats[y]
+            lon_val = lons[x]
+
+            lon_weighted += lon_val * weight
+            lat_weighted += lat_val * weight
+            intensity += weight * area_per_grid
+            total_weight += weight
+
+        # 添加指标
+        if total_weight > 0:
+            cluster_dict[cid]["intensity"] = float(intensity)
+            cluster_dict[cid]["centroid"] = (
+                float(lon_weighted / total_weight),
+                float(lat_weighted / total_weight),
+            )
+        else:
+            cluster_dict[cid]["intensity"] = 0.0
+            cluster_dict[cid]["centroid"] = (None, None)
+
+    return cluster_dict
