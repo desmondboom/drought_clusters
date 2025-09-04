@@ -13,7 +13,9 @@ start_date = datetime(2011, 5, 1)
 end_date = datetime(2020, 9, 30)
 
 temp_path = "./data/era5_daily_mean_198005-202009_CHINA_new.nc"  # 你的实际文件路径
-clim_path = "./data/era5_daily_mean_201105-201109_CHINA_new.nc"  # 气候基准期，用于计算阈值
+clim_path = (
+    "./data/era5_daily_mean_201105-201109_CHINA_new.nc"  # 气候基准期，用于计算阈值
+)
 output_path = "./data/processed/heatwave_processed.nc"
 
 var_name = "t2m"  # NetCDF 中的温度变量名（单位为 Kelvin）
@@ -71,10 +73,12 @@ output_nc.createDimension("lat", len(lats))
 output_nc.createDimension("lon", len(lons))
 
 # 时间变量
-time_var = output_nc.createVariable("time", "f8", ("time",))
-time_var.units = "hours since 1900-01-01 00:00:00"
-time_var.calendar = "standard"
-time_var[:] = date2num(dates_actual, units=time_var.units, calendar=time_var.calendar)
+f_src = Dataset(temp_path)
+src_time = f_src.variables["time"]
+time_var = output_nc.createVariable("time", src_time.datatype, ("time",))
+time_var.setncatts({k: getattr(src_time, k) for k in src_time.ncattrs()})
+time_var[:] = src_time[:]
+f_src.close()
 
 # 空间变量
 output_nc.createVariable("lat", "f4", ("lat",))[:] = lats
