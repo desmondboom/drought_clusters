@@ -12,8 +12,8 @@ dataset = "ERA5"
 start_date = datetime(2011, 5, 1)
 end_date = datetime(2020, 9, 30)
 
-temp_path = "./data/era5_daily_mean_198005-202009_CHINA.nc"  # 你的实际文件路径
-clim_path = "./data/era5_daily_mean_201105-202009_CHINA.nc"  # 气候基准期，用于计算阈值
+temp_path = "./data/era5_daily_mean_198005-202009_CHINA_new.nc"  # 你的实际文件路径
+clim_path = "./data/era5_daily_mean_201105-201109_CHINA_new.nc"  # 气候基准期，用于计算阈值
 output_path = "./data/processed/heatwave_processed.nc"
 
 var_name = "t2m"  # NetCDF 中的温度变量名（单位为 Kelvin）
@@ -26,7 +26,8 @@ percentile_level = 90
 def load_temperature(path):
     f = Dataset(path)
     temp = f.variables[var_name][:]  # shape: (time, lat, lon)
-    temp = temp - 273.15  # 转为摄氏度
+    # 已经转换过单位，不需要再转换
+    # temp = temp - 273.15  # 转为摄氏度
     time = f.variables["time"]
     lons = f.variables["lon"][:]
     lats = f.variables["lat"][:]
