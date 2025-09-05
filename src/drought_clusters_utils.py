@@ -1693,6 +1693,15 @@ def track_heatwave_clusters_and_save(
             date += timedelta(days=1)
             continue
 
+        # 赛季边界处理：每年 5 月 1 日重置匹配，避免将上一年 9 月与下一年 5 月误连为同一事件
+        if previous_date is not None:
+            is_new_season = (date.month == 5 and date.day == 1) and (
+                previous_date.year < date.year and previous_date.month >= 9
+            )
+            if is_new_season:
+                previous_clusters = {}
+                previous_date = None
+
         current_clusters = pickle.load(open(file_dict, "rb"))
 
         # 将当前聚类分配到热浪事件中
