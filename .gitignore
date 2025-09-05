@@ -132,3 +132,5 @@ dmypy.json
 
 data/
 clusters_output/
+
+.DS_Store
