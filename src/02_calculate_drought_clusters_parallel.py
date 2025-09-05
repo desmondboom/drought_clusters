@@ -78,9 +78,9 @@ for i, date in enumerate(actual_dates):
         time_mask.append(i)
 
 time_mask = np.array(time_mask)
-T_actual = T_actual[time_mask]
-T_threshold = T_threshold[time_mask]
-heatwave_mask = heatwave_mask[time_mask]
+T_actual_filtered = T_actual[time_mask]
+T_threshold_filtered = T_threshold[time_mask]
+heatwave_mask_filtered = heatwave_mask[time_mask]
 
 nsteps = len(time_mask)
 resolution_lon = np.mean(lons[1:] - lons[:-1])
@@ -94,7 +94,7 @@ resolution_lat = np.mean(lats[1:] - lats[:-1])
 import os  # 确保放在文件顶部
 
 
-def find_clusters(chunk, actual_dates, time_mask):
+def find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold_filtered, heatwave_mask_filtered):
     chunk_length = len(chunk)
 
     # 🛠️ 确保输出路径存在（只执行一次）
@@ -107,9 +107,9 @@ def find_clusters(chunk, actual_dates, time_mask):
         current_date = actual_dates[time_mask[index]]
         safe_date_str = current_date.strftime("%Y%m%d")  # 🆗 无空格的日期字符串
 
-        # STEP 1: Extract 2D fields for this timestep
-        binary_mask = heatwave_mask[index, :, :].astype(np.float32)  # 转换为浮点数类型
-        temp_diff = T_actual[index, :, :] - T_threshold[index, :, :]
+        # STEP 1: Extract 2D fields for this timestep (使用筛选后的数据)
+        binary_mask = heatwave_mask_filtered[index, :, :].astype(np.float32)  # 转换为浮点数类型
+        temp_diff = T_actual_filtered[index, :, :] - T_threshold_filtered[index, :, :]
 
         # STEP 2: Identify heatwave clusters using spatial connectivity
         print(
@@ -156,4 +156,4 @@ if rank >= offset and rank < size - 1:
 elif rank == size - 1:
     chunk = np.arange((rank - offset) * h, nsteps)
 
-find_clusters(chunk, actual_dates, time_mask)
+find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold_filtered, heatwave_mask_filtered)
