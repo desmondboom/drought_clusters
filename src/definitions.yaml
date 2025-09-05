@@ -20,7 +20,7 @@ start_year: 2011
 end_year: 2020
 
 # 聚类最小面积（km²）
-minimum_area_threshold: 10000
+minimum_area_threshold: 100
 
 # 是否经度为周期边界（仅在全球数据中设为 True，区域数据建议设为 False）
 periodic_bool: False

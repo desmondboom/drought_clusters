@@ -358,11 +358,13 @@ def find_gridcell_area(center_lon, center_lat, resolution_lon, resolution_lat):
     # Earth's radius (km)
     R = 6371.0
 
-    # Find gridcell edges
-    lon_min = center_lon - resolution_lon / 2.0
-    lon_max = center_lon + resolution_lon / 2.0
-    lat_min = center_lat - resolution_lat / 2.0
-    lat_max = center_lat + resolution_lat / 2.0
+    # Find gridcell edges (use absolute values for resolution to handle negative lat resolution)
+    res_lon_abs = abs(resolution_lon)
+    res_lat_abs = abs(resolution_lat)
+    lon_min = center_lon - res_lon_abs / 2.0
+    lon_max = center_lon + res_lon_abs / 2.0
+    lat_min = center_lat - res_lat_abs / 2.0
+    lat_max = center_lat + res_lat_abs / 2.0
 
     # Convert coordinates to radians
     lon_min = (360 + lon_min) * np.pi / 180.0

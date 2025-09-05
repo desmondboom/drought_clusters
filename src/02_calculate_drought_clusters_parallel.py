@@ -7,6 +7,7 @@ Adapted from original drought code by Julio E. Herrera Estrada, Ph.D.
 import yaml
 import numpy as np
 from mpi4py import MPI
+import time
 import pickle
 from netCDF4 import Dataset
 from datetime import datetime
@@ -102,32 +103,43 @@ def find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold
         os.makedirs(clusters_full_path)
 
     for i in range(0, chunk_length):
+        step_t0 = time.time()
         index = int(chunk[i])
         # 使用实际的时间轴而不是简单的索引加法
         current_date = actual_dates[time_mask[index]]
         safe_date_str = current_date.strftime("%Y%m%d")  # 🆗 无空格的日期字符串
 
         # STEP 1: Extract 2D fields for this timestep (使用筛选后的数据)
-        binary_mask = heatwave_mask_filtered[index, :, :].astype(np.float32)  # 转换为浮点数类型
+        # 使用温度差作为聚类输入，并将非热浪像元设为 NaN，确保仅在热浪像元上建立连通域
         temp_diff = T_actual_filtered[index, :, :] - T_threshold_filtered[index, :, :]
+        data_for_clustering = temp_diff.astype(np.float32)
+        data_for_clustering[data_for_clustering <= 0] = np.nan
+        # 同时构造用于保存的二值掩膜（0/1）
+        binary_mask = np.where(np.isfinite(data_for_clustering), 1.0, np.nan).astype(np.float32)
+
+        # 进度提示（提早打印，便于观察）
+        print(
+            f"[Rank {rank}] {i + 1}/{chunk_length} | global {index + 1}/{nsteps} | date {safe_date_str}: heatwave pixels = {int(np.isfinite(data_for_clustering).sum())}")
 
         # STEP 2: Identify heatwave clusters using spatial connectivity
-        print(
-            f"Rank {rank + 1}: Identifying clusters for time step {index + 1} of {nsteps} ({i + 1}/{chunk_length})..."
-        )
         cluster_count, cluster_dict = dclib.find_drought_clusters(
-            binary_mask, lons, lats, resolution_lon, resolution_lat, periodic_bool
+            data_for_clustering, lons, lats, resolution_lon, resolution_lat, periodic_bool
         )
 
         # STEP 3: Filter small clusters
-        binary_mask, cluster_count, cluster_dict = dclib.filter_drought_clusters(
-            binary_mask, cluster_count, cluster_dict, minimum_area_threshold
+        data_for_clustering, cluster_count, cluster_dict = dclib.filter_drought_clusters(
+            data_for_clustering, cluster_count, cluster_dict, minimum_area_threshold
         )
 
         # STEP 4: Compute heatwave features (intensity, centroid)
         cluster_dict = dclib.add_heatwave_metrics(
             cluster_dict, temp_diff, lons, lats, resolution_lon, resolution_lat
         )
+
+        # 更新用于保存的掩膜（经过面积阈值过滤后，仅保留有效聚类像元为1，其它为NaN）
+        if cluster_count > 0:
+            # 将被过滤后的 data_for_clustering 中的有限值置为1，其它NaN保持
+            binary_mask = np.where(np.isfinite(data_for_clustering), 1.0, np.nan).astype(np.float32)
 
         # STEP 5: Save results with safe file names
         f_name_mask = f"{clusters_full_path}/heatwave-mask_{safe_date_str}.pck"
@@ -141,7 +153,10 @@ def find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold
         with open(f_name_count, "wb") as f:
             pickle.dump(cluster_count, f, pickle.HIGHEST_PROTOCOL)
 
-        print(f"Rank {rank + 1}: Saved results for time step {index + 1}.")
+        step_secs = time.time() - step_t0
+        print(
+            f"[Rank {rank}] saved {safe_date_str} | clusters={cluster_count} | step={step_secs:.2f}s"
+        )
 
 
 ##################################################################################
