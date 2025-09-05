@@ -52,10 +52,37 @@ T_threshold = f.variables["T_threshold"][:]
 heatwave_mask = f.variables["heatwave_mask"][:]
 lons = f.variables[lon_var][:]
 lats = f.variables[lat_var][:]
+
+# 获取实际的时间轴信息
+time_var = f.variables["time"]
+time_units = time_var.units
+time_calendar = time_var.calendar if hasattr(time_var, "calendar") else "standard"
+from netCDF4 import num2date
+
+actual_dates = num2date(time_var[:], units=time_units, calendar=time_calendar)
 f.close()
 
-start_date = datetime(start_year, 5, 1)  # May–Sep only
-nsteps = T_actual.shape[0]
+# 找到2011-2020年5-9月的时间索引
+start_date = datetime(start_year, 5, 1)
+end_date = datetime(end_year, 9, 30)
+
+# 筛选出目标时间段的数据
+time_mask = []
+for i, date in enumerate(actual_dates):
+    if (
+        date.year >= start_year
+        and date.year <= end_year
+        and date.month >= 5
+        and date.month <= 9
+    ):
+        time_mask.append(i)
+
+time_mask = np.array(time_mask)
+T_actual = T_actual[time_mask]
+T_threshold = T_threshold[time_mask]
+heatwave_mask = heatwave_mask[time_mask]
+
+nsteps = len(time_mask)
 resolution_lon = np.mean(lons[1:] - lons[:-1])
 resolution_lat = np.mean(lats[1:] - lats[:-1])
 
@@ -67,7 +94,7 @@ resolution_lat = np.mean(lats[1:] - lats[:-1])
 import os  # 确保放在文件顶部
 
 
-def find_clusters(chunk):
+def find_clusters(chunk, actual_dates, time_mask):
     chunk_length = len(chunk)
 
     # 🛠️ 确保输出路径存在（只执行一次）
@@ -76,11 +103,12 @@ def find_clusters(chunk):
 
     for i in range(0, chunk_length):
         index = int(chunk[i])
-        current_date = start_date + relativedelta(days=index)  # daily time
+        # 使用实际的时间轴而不是简单的索引加法
+        current_date = actual_dates[time_mask[index]]
         safe_date_str = current_date.strftime("%Y%m%d")  # 🆗 无空格的日期字符串
 
         # STEP 1: Extract 2D fields for this timestep
-        binary_mask = heatwave_mask[index, :, :]
+        binary_mask = heatwave_mask[index, :, :].astype(np.float32)  # 转换为浮点数类型
         temp_diff = T_actual[index, :, :] - T_threshold[index, :, :]
 
         # STEP 2: Identify heatwave clusters using spatial connectivity
@@ -128,4 +156,4 @@ if rank >= offset and rank < size - 1:
 elif rank == size - 1:
     chunk = np.arange((rank - offset) * h, nsteps)
 
-find_clusters(chunk)
+find_clusters(chunk, actual_dates, time_mask)
