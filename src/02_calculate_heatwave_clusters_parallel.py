@@ -14,7 +14,7 @@ from dateutil.relativedelta import relativedelta
 from mpi4py import MPI
 from netCDF4 import Dataset
 
-import drought_clusters_utils as dclib
+import heatwave_clusters_utils as hclib
 
 # Initialize MPI
 comm = MPI.COMM_WORLD
@@ -133,7 +133,7 @@ def find_clusters(
         )
 
         # STEP 2: Identify heatwave clusters using spatial connectivity
-        cluster_count, cluster_dict = dclib.find_drought_clusters(
+        cluster_count, cluster_dict = hclib.find_drought_clusters(
             data_for_clustering,
             lons,
             lats,
@@ -144,13 +144,13 @@ def find_clusters(
 
         # STEP 3: Filter small clusters
         data_for_clustering, cluster_count, cluster_dict = (
-            dclib.filter_drought_clusters(
+            hclib.filter_drought_clusters(
                 data_for_clustering, cluster_count, cluster_dict, minimum_area_threshold
             )
         )
 
         # STEP 4: Compute heatwave features (intensity, centroid)
-        cluster_dict = dclib.add_heatwave_metrics(
+        cluster_dict = hclib.add_heatwave_metrics(
             cluster_dict, temp_diff, lons, lats, resolution_lon, resolution_lat
         )
 

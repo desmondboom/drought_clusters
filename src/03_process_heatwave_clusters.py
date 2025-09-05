@@ -16,7 +16,7 @@ import yaml
 from dateutil.relativedelta import relativedelta
 from netCDF4 import Dataset
 
-import drought_clusters_utils as dclib
+import heatwave_clusters_utils as hclib
 
 ##################################################################################
 ############################ SET PATHS AND DEFINITIONS ###########################
@@ -94,7 +94,7 @@ else:
     print("❌ 未找到聚类文件目录")
     exit(1)
 
-dclib.track_heatwave_clusters_and_save(
+hclib.track_heatwave_clusters_and_save(
     clusters_full_path,
     start_date,
     end_date,
