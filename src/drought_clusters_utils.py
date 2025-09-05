@@ -1,10 +1,3 @@
-"""
-This file contains the functions needed to calculate, track, and analyze the drought clusters.
-
-Written by Julio E. Herrera Estrada, Ph.D.
-"""
-
-# Import libraries
 import os
 import pickle
 from calendar import monthrange
@@ -1677,7 +1670,33 @@ def track_heatwave_clusters_and_save(
     """
     追踪热浪聚类在时间维度上的演化，并保存为追踪事件字典
     """
-    print("▶️ 开始追踪热浪事件...")
+    print("开始追踪热浪事件...")
+
+    # 获取所有可用的聚类文件，按日期排序
+    import glob
+    from datetime import datetime
+    print(f"🔍 搜索路径: {cluster_path}")
+    dict_files = glob.glob(f"{cluster_path}/heatwave-dictionary_*.pck")
+    print(f"🔍 找到文件数量: {len(dict_files)}")
+    if not dict_files:
+        print("❌ 未找到聚类文件")
+        return
+
+    # 提取日期并排序
+    file_dates = []
+    for f in dict_files:
+        date_str = f.split("_")[-1].replace(".pck", "")
+        try:
+            date_obj = datetime.strptime(date_str, "%Y%m%d")
+            file_dates.append((date_obj, f))
+        except Exception as e:
+            print(f"⚠️ 日期解析失败: {date_str} - {e}")
+            continue
+    
+    print(f"📊 成功解析日期的文件数量: {len(file_dates)}")
+
+    file_dates.sort(key=lambda x: x[0])
+    print(f"📊 找到 {len(file_dates)} 个聚类文件")
 
     cluster_data_dictionary = {}
     event_id_counter = 0
@@ -1685,22 +1704,17 @@ def track_heatwave_clusters_and_save(
     previous_clusters = {}
     previous_date = None
 
-    date = start_date
-    for t in range(nt):
-        safe_date_str = date.strftime("%Y%m%d")
-        file_dict = f"{cluster_path}/heatwave-dictionary_{safe_date_str}.pck"
+    for i, (date, file_dict) in enumerate(file_dates):
+        if i % 100 == 0:
+            print(f"处理进度: {i+1}/{len(file_dates)} - {date.strftime('%Y-%m-%d')}")
 
-        if not os.path.exists(file_dict):
-            print(f"⚠️ 跳过 {date}，无聚类文件。 {file_dict}")
-            date += timedelta(days=1)
-            continue
-
-        # 赛季边界处理：每年 5 月 1 日重置匹配，避免将上一年 9 月与下一年 5 月误连为同一事件
+        # 边界处理：每年 5 月 1 日重置匹配，避免将上一年 9 月与下一年 5 月误连为同一事件
         if previous_date is not None:
             is_new_season = (date.month == 5 and date.day == 1) and (
                 previous_date.year < date.year and previous_date.month >= 9
             )
             if is_new_season:
+                print(f"边界重置: {date.strftime('%Y-%m-%d')}")
                 previous_clusters = {}
                 previous_date = None
 
@@ -1749,7 +1763,6 @@ def track_heatwave_clusters_and_save(
 
         previous_clusters = current_clusters
         previous_date = date
-        date += timedelta(days=1)
 
     print(f"✅ 共识别热浪事件数：{len(cluster_data_dictionary)}")
 

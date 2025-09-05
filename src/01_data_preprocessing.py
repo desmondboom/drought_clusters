@@ -64,71 +64,75 @@ for day_index, target_date in enumerate(dates_actual):
 # ----------------------------------------
 heatwave_mask = (T_actual > T_threshold).astype(np.uint8)
 
+
 # ----------------------------------------
 # 应用连续3天筛选（热浪定义要求至少连续3天）
 # ----------------------------------------
 def apply_consecutive_days_filter(mask, min_consecutive_days=3):
     """
     应用连续天数筛选，只保留连续至少min_consecutive_days天的热浪
-    
+
     Args:
         mask: 3D数组 (time, lat, lon)，二值热浪掩码
         min_consecutive_days: 最小连续天数，默认3天
-    
+
     Returns:
         filtered_mask: 筛选后的热浪掩码
     """
     print(f"应用连续{min_consecutive_days}天筛选...")
-    
+
     nt, nlats, nlons = mask.shape
     filtered_mask = np.zeros_like(mask, dtype=np.uint8)
-    
+
     # 使用向量化操作提高效率
     print(f"处理 {nlats} x {nlons} = {nlats * nlons} 个格点...")
-    
+
     # 对每个格点进行时间序列分析
     processed = 0
     total = nlats * nlons
-    
+
     for lat_idx in range(nlats):
         for lon_idx in range(nlons):
             time_series = mask[:, lat_idx, lon_idx]
-            
+
             # 找到连续的热浪期
-            consecutive_periods = find_consecutive_periods(time_series, min_consecutive_days)
-            
+            consecutive_periods = find_consecutive_periods(
+                time_series, min_consecutive_days
+            )
+
             # 标记满足条件的连续期
             for start, end in consecutive_periods:
-                filtered_mask[start:end+1, lat_idx, lon_idx] = 1
-            
+                filtered_mask[start : end + 1, lat_idx, lon_idx] = 1
+
             processed += 1
             if processed % 10000 == 0:
                 print(f"已处理 {processed}/{total} 个格点 ({processed/total*100:.1f}%)")
-    
+
     # 统计筛选效果
     original_count = np.sum(mask > 0)
     filtered_count = np.sum(filtered_mask > 0)
-    
+
     print(f"原始热浪格点总数: {original_count}")
     print(f"筛选后热浪格点总数: {filtered_count}")
     print(f"保留比例: {filtered_count / original_count * 100:.2f}%")
-    
+
     return filtered_mask
+
 
 def find_consecutive_periods(time_series, min_length):
     """
     找到时间序列中连续1的段落，长度至少为min_length
-    
+
     Args:
         time_series: 1D二值数组
         min_length: 最小连续长度
-    
+
     Returns:
         periods: 连续期的列表，每个元素为(start, end)元组
     """
     periods = []
     start = None
-    
+
     for i, value in enumerate(time_series):
         if value == 1 and start is None:
             # 开始一个新的连续期
@@ -138,12 +142,13 @@ def find_consecutive_periods(time_series, min_length):
             if i - start >= min_length:
                 periods.append((start, i - 1))
             start = None
-    
+
     # 处理序列末尾的情况
     if start is not None and len(time_series) - start >= min_length:
         periods.append((start, len(time_series) - 1))
-    
+
     return periods
+
 
 # 应用连续3天筛选
 heatwave_mask = apply_consecutive_days_filter(heatwave_mask, min_consecutive_days=3)

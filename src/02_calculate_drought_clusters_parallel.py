@@ -4,14 +4,15 @@ This script identifies 2D heatwave clusters for each time step using ERA5 temper
 Adapted from original drought code by Julio E. Herrera Estrada, Ph.D.
 """
 
-import yaml
-import numpy as np
-from mpi4py import MPI
-import time
 import pickle
-from netCDF4 import Dataset
+import time
 from datetime import datetime
+
+import numpy as np
+import yaml
 from dateutil.relativedelta import relativedelta
+from mpi4py import MPI
+from netCDF4 import Dataset
 
 import drought_clusters_utils as dclib
 
@@ -95,7 +96,14 @@ resolution_lat = np.mean(lats[1:] - lats[:-1])
 import os  # 确保放在文件顶部
 
 
-def find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold_filtered, heatwave_mask_filtered):
+def find_clusters(
+    chunk,
+    actual_dates,
+    time_mask,
+    T_actual_filtered,
+    T_threshold_filtered,
+    heatwave_mask_filtered,
+):
     chunk_length = len(chunk)
 
     # 🛠️ 确保输出路径存在（只执行一次）
@@ -115,20 +123,30 @@ def find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold
         data_for_clustering = temp_diff.astype(np.float32)
         data_for_clustering[data_for_clustering <= 0] = np.nan
         # 同时构造用于保存的二值掩膜（0/1）
-        binary_mask = np.where(np.isfinite(data_for_clustering), 1.0, np.nan).astype(np.float32)
+        binary_mask = np.where(np.isfinite(data_for_clustering), 1.0, np.nan).astype(
+            np.float32
+        )
 
         # 进度提示（提早打印，便于观察）
         print(
-            f"[Rank {rank}] {i + 1}/{chunk_length} | global {index + 1}/{nsteps} | date {safe_date_str}: heatwave pixels = {int(np.isfinite(data_for_clustering).sum())}")
+            f"[Rank {rank}] {i + 1}/{chunk_length} | global {index + 1}/{nsteps} | date {safe_date_str}: heatwave pixels = {int(np.isfinite(data_for_clustering).sum())}"
+        )
 
         # STEP 2: Identify heatwave clusters using spatial connectivity
         cluster_count, cluster_dict = dclib.find_drought_clusters(
-            data_for_clustering, lons, lats, resolution_lon, resolution_lat, periodic_bool
+            data_for_clustering,
+            lons,
+            lats,
+            resolution_lon,
+            resolution_lat,
+            periodic_bool,
         )
 
         # STEP 3: Filter small clusters
-        data_for_clustering, cluster_count, cluster_dict = dclib.filter_drought_clusters(
-            data_for_clustering, cluster_count, cluster_dict, minimum_area_threshold
+        data_for_clustering, cluster_count, cluster_dict = (
+            dclib.filter_drought_clusters(
+                data_for_clustering, cluster_count, cluster_dict, minimum_area_threshold
+            )
         )
 
         # STEP 4: Compute heatwave features (intensity, centroid)
@@ -139,7 +157,9 @@ def find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold
         # 更新用于保存的掩膜（经过面积阈值过滤后，仅保留有效聚类像元为1，其它为NaN）
         if cluster_count > 0:
             # 将被过滤后的 data_for_clustering 中的有限值置为1，其它NaN保持
-            binary_mask = np.where(np.isfinite(data_for_clustering), 1.0, np.nan).astype(np.float32)
+            binary_mask = np.where(
+                np.isfinite(data_for_clustering), 1.0, np.nan
+            ).astype(np.float32)
 
         # STEP 5: Save results with safe file names
         f_name_mask = f"{clusters_full_path}/heatwave-mask_{safe_date_str}.pck"
@@ -171,4 +191,11 @@ if rank >= offset and rank < size - 1:
 elif rank == size - 1:
     chunk = np.arange((rank - offset) * h, nsteps)
 
-find_clusters(chunk, actual_dates, time_mask, T_actual_filtered, T_threshold_filtered, heatwave_mask_filtered)
+find_clusters(
+    chunk,
+    actual_dates,
+    time_mask,
+    T_actual_filtered,
+    T_threshold_filtered,
+    heatwave_mask_filtered,
+)

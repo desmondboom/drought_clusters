@@ -6,7 +6,7 @@
 
 ## 目录结构
 
-```
+```txt
 project-root/
 │
 ├── data/                          # 存放 ERA5 原始数据的文件夹
@@ -66,10 +66,10 @@ python ./src/01_data_preprocessing.py
 
 功能：
 
-* 计算实际温度 `T_actual`
-* 基于 90 分位数计算动态阈值 `T_threshold`
-* 生成热浪掩膜 `heatwave_mask`
-* 输出保存为 NetCDF 文件 `heatwave_processed.nc`
+- 计算实际温度 `T_actual`
+- 基于 90 分位数计算动态阈值 `T_threshold`
+- 生成热浪掩膜 `heatwave_mask`
+- 输出保存为 NetCDF 文件 `heatwave_processed.nc`
 
 ---
 
@@ -83,12 +83,12 @@ mpirun -np 4 python ./src/02_calculate_drought_clusters_parallel.py
 
 说明：
 
-* `-np 4` 表示使用 4 个核心进行并行处理
-* 如果出错请检查是否正确安装了 `mpi4py`，并且 `openmpi` 已正确配置
+- `-np 4` 表示使用 4 个核心进行并行处理
+- 如果出错请检查是否正确安装了 `mpi4py`，并且 `openmpi` 已正确配置
 
 输出：
 
-* 每个时间点的热浪聚类数据将以 `.pck` 格式保存在：
+- 每个时间点的热浪聚类数据将以 `.pck` 格式保存在：
 
   ```
   ./clusters_output/{dataset}/{region}/{drought_metric}/{drought_threshold}/
@@ -106,11 +106,11 @@ python ./src/03_process_drought_clusters.py
 
 功能：
 
-* 遍历每个时间点的聚类数据
-* 追踪跨天的热浪事件
-* 生成并保存最终结果字典：
+- 遍历每个时间点的聚类数据
+- 追踪跨天的热浪事件
+- 生成并保存最终结果字典：
 
-  ```
+  ```sh
   ./clusters_output/.../result/tracked_clusters_dictionary_2011-2020.pck
   ```
 
@@ -122,7 +122,7 @@ python ./src/03_process_drought_clusters.py
 dataset: ERA5
 region: China
 drought_metric: heatwave
-drought_metric_path: ./  # heatwave_processed.nc 的目录
+drought_metric_path: ./ # heatwave_processed.nc 的目录
 drought_metric_file_name: heatwave_processed.nc
 lat_var: lat
 lon_var: lon
@@ -130,7 +130,7 @@ metric_var: percentiles
 start_year: 2011
 end_year: 2020
 drought_threshold: 0.9
-minimum_area_threshold: 10000
+minimum_area_threshold: 100
 periodic_bool: False
 clusters_partial_path: ./clusters_output
 ```
